@@ -9,6 +9,8 @@ import time
 from pathlib import Path
 from time import strftime
 openai.api_key = "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"
+number_count = 1
+is_speaking = False
 def speak(data):
     global is_speaking
     try:
@@ -39,9 +41,8 @@ def speak(data):
 
     return True
 
-my_file = os.path.join(os.getcwd(), "data")
-number_count = 1
-is_speaking = False
+
+
 
 def hello(name):
     day_time = int(strftime('%H'))
@@ -158,7 +159,7 @@ while True:
     print(os.path.join(os.getcwd(), "temp"))
 
     if query != "---" and check_name(query):
-        playsound(os.path.join(os.getcwd(), "temp")+"\mid.mp3")
+        playsound(os.path.join(os.getcwd(), "temp")+"\\mid.mp3")
         data = call_chatgpt(query)
         print(data)
         speak(data)
