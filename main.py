@@ -155,6 +155,7 @@ def call_chatgpt(text):
 while True:
     query = takeCommand().lower()
     print(query)
+    print(os.path.join(os.getcwd(), "temp"))
 
     if query != "---" and check_name(query):
         playsound(os.path.join(os.getcwd(), "temp")+"\\mid.mp3")
