@@ -8,7 +8,11 @@ from pydub.playback import play
 import time
 from pathlib import Path
 from time import strftime
-openai.api_key = "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"
+import requests
+import yaml
+
+with open("config.yml", "r") as ymlfile:
+    cfg = yaml.load(ymlfile, Loader=yaml.Loader)
 number_count = 1
 is_speaking = False
 def speak(data):
@@ -18,15 +22,15 @@ def speak(data):
         audio = gTTS(remove_word(remove_word(data, "Thomas"), "thomas"), lang='vi')
         global number_count
         number_count = number_count + 1
-        path_file_temp = str(os.path.join(os.getcwd(), "temp") + str(number_count) + "-sound.mp3")
+        path_file_temp = str(os.path.join(os.getcwd(), "temp") + "\\" + str(number_count) + "-sound.mp3")
 
         while os.path.isfile(path_file_temp):
             number_count = number_count + 1
-            path_file_temp = str(os.path.join(os.getcwd(), "temp") + str(number_count) + "-sound.mp3")
+            path_file_temp = str(os.path.join(os.getcwd(), "temp") + "\\" + str(number_count) + "-sound.mp3")
         print(path_file_temp)
         audio.save(str(path_file_temp))
 
-        output_file = str(os.path.join(os.getcwd(), "temp") + str(number_count) + "-output_audio_telephone.wav")
+        output_file = str(os.path.join(os.getcwd(), "temp") + "\\" + str(number_count) + "-output_audio_telephone.wav")
         playsound(os.path.join(os.getcwd(), "data")+"\\mid.mp3")
         is_speaking = True
         apply_telephone_effect(str(path_file_temp), output_file)
@@ -52,8 +56,6 @@ def hello(name):
         speak("Chào buổi chiều  {}. Bạn đã dự định gì cho chiều nay chưa.".format(name))
     else:
         speak("Chào buổi tối {}. Bạn đã ăn tối chưa nhỉ.".format(name))
-
-# def fm():
 
 def takeCommand():
     r = sr.Recognizer()
@@ -138,26 +140,36 @@ def apply_telephone_effect(input_file, output_file):
 def call_chatgpt(text):
     # Gọi API ChatGPT
     # response = api.engine("chatGPT").create(prompt=text)
-    response = openai.completions.create(
-        model="text-davinci-003",
-        prompt=text,
-        temperature=0.9,
-        max_tokens=350,
-        top_p=1,
-        frequency_penalty=0,
-        presence_penalty=0.6,
-        stop=[" Human:", " AI:"]
-    )
+    # openai.api_key = str("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")
+    openai.api_key = str(cfg["openai_api_key"])
 
-    # Trả về kết quả gọi API
-    return str(response.choices[0].text)
+    try:
+
+        # openai.api_key = str("sk - ik4oadKGKbGkFS8zvzABT3BlbkFJZcVFgfyKfAZ5T65K4rtf")
+
+        response = openai.completions.create(
+            model="text-davinci-003",
+            prompt=text,
+            temperature=0.9,
+            max_tokens=350,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0.6,
+            stop=[" Human:", " AI:"]
+        )
+
+        # Trả về kết quả gọi API
+        print("đang nghĩ")
+        return str(response.choices[0].text)
+
+    except sr.UnknownValueError:
+        print("Không phản hồi...")
+        return "Không phản hồi..."
 
 
 while True:
     query = takeCommand().lower()
     print(query)
-    print(os.path.join(os.getcwd(), "temp"))
-
     if query != "---" and check_name(query):
         playsound(os.path.join(os.getcwd(), "temp")+"\\mid.mp3")
         data = call_chatgpt(query)
