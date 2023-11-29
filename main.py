@@ -158,7 +158,7 @@ while True:
     print(os.path.join(os.getcwd(), "temp"))
 
     if query != "---" and check_name(query):
-        playsound(os.path.join(os.getcwd(), "temp")+"\\mid.mp3")
+        playsound(os.path.join(os.getcwd(), "temp")+"\mid.mp3")
         data = call_chatgpt(query)
         print(data)
         speak(data)
