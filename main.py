@@ -6,10 +6,11 @@ from playsound import playsound
 from pydub import AudioSegment
 from pydub.playback import play
 import time
-from pathlib import Path
 from time import strftime
 import requests
 import yaml
+
+
 
 with open("config.yml", "r") as ymlfile:
     cfg = yaml.load(ymlfile, Loader=yaml.Loader)
@@ -21,6 +22,8 @@ def speak(data):
         # Chuyển đổi văn bản thành giọng nói
         audio = gTTS(remove_word(remove_word(data, "Thomas"), "thomas"), lang='vi')
         global number_count
+        if number_count > 9999:
+            number_count = 0
         number_count = number_count + 1
         path_file_temp = str(os.path.join(os.getcwd(), "temp") + "\\" + str(number_count) + "-sound.mp3")
 
@@ -84,7 +87,7 @@ def check_word(text, word):
         playsound(os.path.join(os.getcwd(), "data")+"\\come.mp3")
         speak("Xin chào")
         hello("Anh hàng xóm")
-        return False;
+        return False
     # Phân tách đoạn văn thành các từ
     words = text.split()
 
@@ -127,6 +130,8 @@ def apply_telephone_effect(input_file, output_file):
     # Play the original and modified audio for comparison
     # play(audio)
     modified_audio = AudioSegment.from_file(output_file)
+    os.remove(input_file)
+    os.remove(output_file)
     play(modified_audio)
 
 def call_chatgpt(text):
@@ -162,12 +167,12 @@ def call_chatgpt(text):
 while True:
     query = takeCommand().lower()
     print(query)
-    if query != "---" and check_name(query):
-        playsound(os.path.join(os.getcwd(), "temp")+"\\mid.mp3")
-        data = call_chatgpt(query)
-        print(data)
-        speak(data)
+    # if query != "---" and check_name(query):
+    #     playsound(os.path.join(os.getcwd(), "temp")+"\\mid.mp3")
+    #     data = call_chatgpt(query)
+    #     print(data)
+    #     speak(data)
 
-    # data = call_chatgpt("thomas thủ đô nước việt nam ở đâu")
-    # print(data)
-    # speak(data)
+    data = call_chatgpt("thomas thủ đô nước việt nam ở đâu")
+    print(data)
+    speak(data)
