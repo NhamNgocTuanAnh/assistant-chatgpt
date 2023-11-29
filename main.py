@@ -9,9 +9,6 @@ import time
 from time import strftime
 import requests
 import yaml
-
-
-
 with open("config.yml", "r") as ymlfile:
     cfg = yaml.load(ymlfile, Loader=yaml.Loader)
 number_count = 1
