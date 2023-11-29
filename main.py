@@ -59,23 +59,15 @@ def hello(name):
 
 def takeCommand():
     r = sr.Recognizer()
-    global is_speaking
-    if not is_speaking:
-        with sr.Microphone() as source:
-            print("Listening...")
-            r.pause_threshold = 1
-            audio = r.listen(source)
 
-    # Nếu không đang phát âm thanh thì bật micro
-    if is_speaking:
-        with sr.Microphone() as source:
-            source.stop_listening()
-
+    with sr.Microphone() as source:
+        print("Listening...")
+        r.pause_threshold = 1
+        audio = r.listen(source)
     try:
-        if not is_speaking:
-            print("Recognising...")
-            return r.recognize_google(audio, language='vi-VN')
-        return "---"
+
+        print("Recognising...")
+        return r.recognize_google(audio, language='vi-VN')
     except sr.UnknownValueError:
         print("No Human...")
 
