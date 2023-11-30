@@ -1,113 +1,175 @@
-import speech_recognition as sr
-import time
-import os
 import openai
-import threading
-from pathlib import Path
+import os
 from gtts import gTTS
-import playsound
-my_file = Path("C:\\Users\\Surface\\Downloads\\data")
+import speech_recognition as sr
+from playsound import playsound
+from pydub import AudioSegment
+from pydub.playback import play
+import time
+from time import strftime
+import requests
+import yaml
+with open("config.yml", "r") as ymlfile:
+    cfg = yaml.load(ymlfile, Loader=yaml.Loader)
 number_count = 1
-def recognize_speech():
-    # Khởi tạo đối tượng nhận dạng giọng nói
-    recognizer = sr.Recognizer()
-
-    # Tạo bộ lọc tiếng ồn
-    with sr.Microphone() as source:
-        recognizer.adjust_for_ambient_noise(source)
-
-    # Nhận dạng giọng nói
-    audio = recognizer.listen(source)
-
-    # Trả về kết quả nhận dạng
+is_speaking = False
+def speak(data):
+    global is_speaking
     try:
-        return recognizer.recognize_google(audio, language='vi-VN')
+        # Chuyển đổi văn bản thành giọng nói
+        audio = gTTS(remove_word(remove_word(data, "Thomas"), "thomas"), lang='vi')
+        global number_count
+        if number_count > 9999:
+            number_count = 0
+        number_count = number_count + 1
+        path_file_temp = str(os.path.join(os.getcwd(), "temp") + "\\" + str(number_count) + "-sound.mp3")
+
+        while os.path.isfile(path_file_temp):
+            number_count = number_count + 1
+            path_file_temp = str(os.path.join(os.getcwd(), "temp") + "\\" + str(number_count) + "-sound.mp3")
+        print(path_file_temp)
+        audio.save(str(path_file_temp))
+
+        output_file = str(os.path.join(os.getcwd(), "temp") + "\\" + str(number_count) + "-output_audio_telephone.wav")
+        playsound(os.path.join(os.getcwd(), "data")+"\\mid.mp3")
+        is_speaking = True
+        apply_telephone_effect(str(path_file_temp), output_file)
+        # playsound(path_file_temp)
+        is_speaking = False
+        time.sleep(3)
+
+    except Exception as e:
+        print(e)
+    finally:
+        print("Chuyển đổi văn bản thành giọng nói")
+
+    return True
+
+
+
+
+def hello(name):
+    day_time = int(strftime('%H'))
+    if day_time < 12:
+        speak("Chào buổi sáng {}. Chúc bạn một ngày tốt lành.".format(name))
+    elif 12 <= day_time < 18:
+        speak("Chào buổi chiều  {}. Bạn đã dự định gì cho chiều nay chưa.".format(name))
+    else:
+        speak("Chào buổi tối {}. Bạn đã ăn tối chưa nhỉ.".format(name))
+
+def takeCommand():
+    r = sr.Recognizer()
+
+    with sr.Microphone() as source:
+        print("Listening...")
+        r.pause_threshold = 1
+        audio = r.listen(source)
+    try:
+
+        print("Recognising...")
+        return r.recognize_google(audio, language='vi-VN')
     except sr.UnknownValueError:
-        return None
+        print("No Human...")
+
+    return "---"
+
+
+def remove_word(text, word):
+    # Thay thế tất cả các lần xuất hiện của từ "anh" bằng ""
+    return text.replace(word, "")
+
+
+def check_word(text, word):
+    if str(word) == str(text):
+        playsound(os.path.join(os.getcwd(), "data")+"\\come.mp3")
+        speak("Xin chào")
+        hello("Anh hàng xóm")
+        return False
+    # Phân tách đoạn văn thành các từ
+    words = text.split()
+
+    # Kiểm tra xem từ "anh" có nằm trong danh sách các từ hay không
+    for w in words:
+        if w == word:
+            playsound(os.path.join(os.getcwd(), "data")+"\\come.mp3")
+            return True
+    else:
+        return False
+
+
+def check_time_saving(file_path):
+    while not os.path.exists(file_path):
+        time.sleep(1)
+
+    return True
+
+
+def check_name(data):
+    if check_word(data, "thomas") == 1:
+        return True;
+    if check_word(data, "Thomas") == 1:
+        return True;
+    return False
+
+def apply_telephone_effect(input_file, output_file):
+    # Load the audio file
+    audio = AudioSegment.from_file(input_file)
+
+    # Simulate reduced frequency range (equalization)
+    audio = audio.low_pass_filter(2000)
+
+    # Simulate distortion
+    audio = audio + 10  # Increase volume (amplify)
+
+    # Export the modified audio
+    audio.export(output_file, format="wav")
+
+    # Play the original and modified audio for comparison
+    # play(audio)
+    modified_audio = AudioSegment.from_file(output_file)
+    os.remove(input_file)
+    os.remove(output_file)
+    play(modified_audio)
 
 def call_chatgpt(text):
-    # Tạo đối tượng API ChatGPT
-    from openai import OpenAI
-
-    # Khởi tạo đối tượng OpenAI
-    api = OpenAI("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")
-
     # Gọi API ChatGPT
     # response = api.engine("chatGPT").create(prompt=text)
-    response = openai.completions.create(
-        model="text-davinci-003",
-        prompt=text,
-        temperature=0.9,
-        max_tokens=350,
-        top_p=1,
-        frequency_penalty=0,
-        presence_penalty=0.6,
-        stop=[" Human:", " AI:"]
-    )
+    # openai.api_key = str("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")
+    openai.api_key = str(cfg["openai_api_key"])
 
-    # Trả về kết quả gọi API
-    return response.choices[0].text
+    try:
 
-def play_sound(text):
-    # Tạo đối tượng tạo âm thanh
-    from gtts import gTTS
+        # openai.api_key = str("sk - ik4oadKGKbGkFS8zvzABT3BlbkFJZcVFgfyKfAZ5T65K4rtf")
 
-    # Tạo đối tượng âm thanh
-    tts = gTTS(text, lang="vi")
-    # Lưu âm thanh vào file
-    # tts.save("audio.mp3")
-    # # Phát âm thanh
-    # playsound("audio.mp3")
+        response = openai.completions.create(
+            model="text-davinci-003",
+            prompt=text,
+            temperature=0.9,
+            max_tokens=350,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0.6,
+            stop=[" Human:", " AI:"]
+        )
 
-    global number_count
-    number_count = number_count + 1
-    path_file_temp = str("C:\\Users\\Surface\\Downloads\\data\\" + str(number_count) + "-sound.mp3")
-    print(path_file_temp)
-    while os.path.isfile(path_file_temp):
-        number_count = number_count + 1
-        path_file_temp = str("C:\\Users\\Surface\\Downloads\\data\\" + str(number_count) + "-sound.mp3")
+        # Trả về kết quả gọi API
+        print("đang nghĩ")
+        return str(response.choices[0].text)
 
-    tts.save(str(path_file_temp))
-
-    playsound(text)
+    except sr.UnknownValueError:
+        print("Không phản hồi...")
+        return "Không phản hồi..."
 
 
-def main():
-    # Khởi tạo biến
-    is_speaking = False
+while True:
+    query = takeCommand().lower()
+    print(query)
+    # if query != "---" and check_name(query):
+    #     playsound(os.path.join(os.getcwd(), "temp")+"\\mid.mp3")
+    #     data = call_chatgpt(query)
+    #     print(data)
+    #     speak(data)
 
-    # Tạo luồng nhận dạng giọng nói
-    thread_recognize = threading.Thread(target=recognize_speech)
-    thread_recognize.daemon = True
-    thread_recognize.start()
-
-    # Vòng lặp chính
-    while True:
-        # Nếu đang phát âm thanh thì tắt micro
-        if is_speaking:
-            with sr.Microphone() as source:
-                source.stop_listening()
-
-        # Nếu không đang phát âm thanh thì bật micro
-        if not is_speaking:
-            with sr.Microphone() as source:
-                source.start_listening()
-
-        # Kiểm tra nếu có kết quả nhận dạng giọng nói
-        text = recognize_speech()
-        if text is not None:
-            # Gọi API ChatGPT
-            response = call_chatgpt(text)
-
-            # Viết kết quả gọi API vào file
-            with open("C:\\Users\\Surface\\Downloads\\sound.mp3\\output.txt", "a", encoding="utf-8") as f:
-                f.write(response + "\n")
-
-            # Phát âm thanh
-            play_sound(response)
-
-            # Chuyển trạng thái đang phát âm thanh
-            is_speaking = True
-
-        # Ngủ 1 giây
-        time.sleep(1)
+    data = call_chatgpt("thomas thủ đô nước việt nam ở đâu")
+    print(data)
+    speak(data)
