@@ -7,12 +7,14 @@ from pydub import AudioSegment
 from pydub.playback import play
 import time
 from time import strftime
-import requests
 import yaml
 with open("config.yml", "r") as ymlfile:
     cfg = yaml.load(ymlfile, Loader=yaml.Loader)
 number_count = 1
 is_speaking = False
+def remove_word(text, word):
+    # Thay thế tất cả các lần xuất hiện của từ "anh" bằng ""
+    return text.replace(word, "")
 def speak(data):
     global is_speaking
     try:
@@ -74,9 +76,7 @@ def takeCommand():
     return "---"
 
 
-def remove_word(text, word):
-    # Thay thế tất cả các lần xuất hiện của từ "anh" bằng ""
-    return text.replace(word, "")
+
 
 
 def check_word(text, word):
